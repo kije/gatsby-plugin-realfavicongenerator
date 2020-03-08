@@ -1,5 +1,5 @@
 declare module 'rfg-api' {
-  import {AxiosError} from "axios";
+  import { AxiosError } from 'axios';
   export interface MasterPictureConfig {
     type: 'url' | 'inline';
     url?: string;
@@ -42,11 +42,11 @@ declare module 'rfg-api' {
 
   export interface FirefoxAppFaviconDesign {
     master_picture?: MasterPictureConfig;
-    picture_aspect?: 'circle'|'no_change'|'rounded_square'|'square';
+    picture_aspect?: 'circle' | 'no_change' | 'rounded_square' | 'square';
     keep_picture_in_circle?: boolean;
     circle_inner_margin?: number;
     background_color?: string;
-    margin?: number|string,
+    margin?: number | string;
     manifest?: {
       app_name?: string;
       app_description?: string;
@@ -57,14 +57,16 @@ declare module 'rfg-api' {
 
   export interface AndroidChromeFaviconDesign {
     master_picture?: MasterPictureConfig;
-    picture_aspect?: 'shadow'|'no_change'|'background_and_margin';
+    picture_aspect?: 'shadow' | 'no_change' | 'background_and_margin';
     background_color?: string;
-    margin?: number|string;
-    manifest?: {
+    margin?: number | string;
+    manifest: {
       name?: string;
-      display?: 'standalone'|'browser';
-      orientation?: 'portrait'|'landscape';
+      display?: 'standalone' | 'browser';
+      orientation?: 'portrait' | 'landscape';
       start_url?: string;
+      existing_manifest?: string;
+      on_conflict?: 'raise_error' | 'override' | 'keep_existing';
     };
     assets?: {
       legacy_icon?: boolean;
@@ -75,26 +77,26 @@ declare module 'rfg-api' {
 
   export interface SafariPinnedTabFaviconDesign {
     master_picture?: MasterPictureConfig;
-    picture_aspect?: 'no_change'|'silhouette'|'background_and_margin';
+    picture_aspect?: 'no_change' | 'silhouette' | 'background_and_margin';
     threshold?: number;
     theme_color?: string;
     background_color?: string;
-    margin?: number|string;
+    margin?: number | string;
   }
 
   export interface CoastFaviconDesign {
     master_picture?: MasterPictureConfig;
-    picture_aspect?: 'no_change'|'background_and_margin';
+    picture_aspect?: 'no_change' | 'background_and_margin';
     background_color?: string;
-    margin?: number|string;
+    margin?: number | string;
   }
 
   export interface OpenGraphFaviconDesign {
     master_picture?: MasterPictureConfig;
-    picture_aspect?: 'no_change'|'background_and_margin';
+    picture_aspect?: 'no_change' | 'background_and_margin';
     background_color?: string;
-    margin?: number|string;
-    ratio?: '1.91:1'|'square';
+    margin?: number | string;
+    ratio?: '1.91:1' | 'square';
     site_url?: string;
   }
 
@@ -123,11 +125,17 @@ declare module 'rfg-api' {
       safari_pinned_tab?: SafariPinnedTabFaviconDesign;
       coast?: CoastFaviconDesign;
       open_graph?: OpenGraphFaviconDesign;
-      yandex_browser?:YandexBrowserFaviconDesign;
+      yandex_browser?: YandexBrowserFaviconDesign;
     };
     settings: {
       compression: number;
-      scaling_algorithm: 'Mitchell'|'NearestNeighbor'|'Cubic'|'Bilinear'|'Lanczos'|'Spline';
+      scaling_algorithm:
+        | 'Mitchell'
+        | 'NearestNeighbor'
+        | 'Cubic'
+        | 'Bilinear'
+        | 'Lanczos'
+        | 'Spline';
       error_on_image_too_small: boolean;
       readme_file: boolean;
       html_code_file: boolean;
@@ -139,7 +147,17 @@ declare module 'rfg-api' {
     };
   }
   export interface GenerateFaviconResult {
-
+    result: { status: string };
+    favicon?: {
+      package_url: string;
+      files_urls: string[];
+      html_code: string;
+      compression: 'true' | 'false';
+      overlapping_markups: string[];
+    };
+    files_location: { type: 'path' | 'root'; path?: string };
+    preview_picture_url: string;
+    version: string;
   }
 
   export interface RFGApi {
@@ -155,5 +173,5 @@ declare module 'rfg-api' {
     ): void;
   }
 
-  export function init(): RFGApi
+  export function init(): RFGApi;
 }

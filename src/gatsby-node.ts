@@ -10,7 +10,12 @@ import {
   OpenGraphFaviconDesign,
 } from 'rfg-api';
 import path from 'path';
-import { copy, remove, pathExists } from 'fs-extra';
+import {
+  CACHE_PATH,
+  PUBLIC_PATH,
+  RESPONSE_CACHED_PATH,
+} from './common';
+import { copy, remove, pathExists, readFileSync, writeFileSync, readFile, writeFile } from 'fs-extra';
 import { pickBy, merge } from 'lodash';
 import { AxiosError } from 'axios';
 
@@ -60,6 +65,7 @@ export interface RealFaviconPluginOptions extends PluginOptions {
     dropShadow?: boolean;
     legacyIcons?: boolean;
     lowResIcons?: boolean;
+    existingManifest?: string;
   };
   safariPinnedTab?: {
     enabled: boolean;
@@ -78,6 +84,7 @@ export interface RealFaviconPluginOptions extends PluginOptions {
   };
 
   faviconRequestOverride?: GenerateFaviconRequest;
+  transformGeneratedManifest?: (manifest: {[key: string]: any}) => {[key: string]: any};
 }
 
 const defaultOptions: Partial<RealFaviconPluginOptions> = {
@@ -112,8 +119,6 @@ type Nullable<T> = {
   [P in keyof T]?: T[P] | null;
 };
 
-const CACHE_PATH = '.cache/realfavicongenerator';
-const PUBLIC_PATH = '/favicons';
 const REQUEST_DIGEST_CACHE_KEY = 'realfavicon-request-digest';
 
 const api = rfgApiInit();
@@ -230,6 +235,7 @@ function buildApiRequest({
       dropShadow,
       legacyIcons,
       lowResIcons,
+      existingManifest
     } = android;
 
     faviconDesigns.android_chrome = filterConfig<AndroidChromeFaviconDesign>({
@@ -252,6 +258,8 @@ function buildApiRequest({
         display: display,
         orientation: forceOrientation,
         start_url: startUrl,
+        existing_manifest: existingManifest ? readFileSync(path.resolve(existingManifest)).toString() : null,
+        on_conflict: existingManifest ? 'override' : null,
       }),
       assets: {
         legacy_icon: legacyIcons,
@@ -339,11 +347,12 @@ function generateIcons(
   return new Promise<GenerateFaviconResult>((resolve, reject) => {
     api.generateFavicon(
       faviconRequest,
-      path.resolve(CACHE_PATH),
+      CACHE_PATH,
       (error: AxiosError, result: GenerateFaviconResult) => {
         if (error) {
           reject(error);
         } else {
+          writeFileSync(RESPONSE_CACHED_PATH, JSON.stringify(result));
           resolve(result);
         }
       },
@@ -370,12 +379,12 @@ export const onPostBootstrap: NonNullable<GatsbyNode['onPostBootstrap']> = async
 
   const requestDigest = await cache.get(REQUEST_DIGEST_CACHE_KEY);
 
-  if (requestDigest !== currentRequestDigest || !await pathExists(path.resolve(CACHE_PATH, 'site.webmanifest'))) {
+  if (requestDigest !== currentRequestDigest || !await pathExists(path.join(CACHE_PATH, 'site.webmanifest'))) {
     reporter.info(
       '[gatsby-plugin-realfavicongenerator] Start favicon generation. This may take a while!',
     );
     try {
-      await remove(path.resolve(CACHE_PATH))
+      await remove(CACHE_PATH)
       const result = await generateIcons({
         ...apiRequest,
         versioning: {
@@ -395,8 +404,20 @@ export const onPostBootstrap: NonNullable<GatsbyNode['onPostBootstrap']> = async
     );
   }
 
-  await copy(path.resolve(CACHE_PATH), path.join('public', PUBLIC_PATH));
-  await copy(path.resolve(CACHE_PATH, 'favicon.ico'), path.join('public', 'favicon.ico'));
+  await copy(CACHE_PATH, path.join('public', PUBLIC_PATH));
+  await copy(path.join(CACHE_PATH, 'favicon.ico'), path.join('public', 'favicon.ico'));
+
+  const manifestCachePath = path.join(CACHE_PATH, 'site.webmanifest');
+  const manifestPublicPath = path.join('public', PUBLIC_PATH, 'site.webmanifest');
+  if (pluginOptions.transformGeneratedManifest && await pathExists(manifestCachePath)) {
+    const transformedManifest = pluginOptions.transformGeneratedManifest(JSON.parse((await readFile(manifestCachePath)).toString()));
+    if (transformedManifest) {
+      await writeFile(manifestPublicPath, JSON.stringify(transformedManifest));
+      reporter.info('[gatsby-plugin-realfavicongenerator] manifest transformed!');
+    } else {
+      reporter.warn('[gatsby-plugin-realfavicongenerator] Returned value of transformGeneratedManifest was empty.')
+    }
+  }
 
   activity.end();
 };
