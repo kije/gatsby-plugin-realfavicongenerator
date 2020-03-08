@@ -10,8 +10,8 @@ import {
   OpenGraphFaviconDesign,
 } from 'rfg-api';
 import path from 'path';
-import { pathExists, copy } from 'fs-extra';
-import { pickBy } from 'lodash';
+import { copy, remove, pathExists } from 'fs-extra';
+import { pickBy, merge } from 'lodash';
 import { AxiosError } from 'axios';
 
 export interface RealFaviconPluginOptions extends PluginOptions {
@@ -114,7 +114,7 @@ type Nullable<T> = {
 
 const CACHE_PATH = '.cache/realfavicongenerator';
 const PUBLIC_PATH = '/favicons';
-const REQUEST_DIGEST_CACHE_KEY = 'realfavicon-request-diggest';
+const REQUEST_DIGEST_CACHE_KEY = 'realfavicon-request-digest';
 
 const api = rfgApiInit();
 
@@ -363,17 +363,20 @@ export const onPostBootstrap: NonNullable<GatsbyNode['onPostBootstrap']> = async
   );
   activity.start();
 
-  const apiRequest = buildApiRequest(pluginOptions);
+  const options = merge(defaultOptions, pluginOptions);
+
+  const apiRequest = buildApiRequest(options);
   const currentRequestDigest = createContentDigest(JSON.stringify(apiRequest));
 
   const requestDigest = await cache.get(REQUEST_DIGEST_CACHE_KEY);
 
-  if (requestDigest !== currentRequestDigest) {
+  if (requestDigest !== currentRequestDigest || !await pathExists(path.resolve(CACHE_PATH, 'site.webmanifest'))) {
     reporter.info(
       '[gatsby-plugin-realfavicongenerator] Start favicon generation. This may take a while!',
     );
     try {
-      await generateIcons({
+      await remove(path.resolve(CACHE_PATH))
+      const result = await generateIcons({
         ...apiRequest,
         versioning: {
           param_name: 'version',
@@ -393,6 +396,7 @@ export const onPostBootstrap: NonNullable<GatsbyNode['onPostBootstrap']> = async
   }
 
   await copy(path.resolve(CACHE_PATH), path.join('public', PUBLIC_PATH));
+  await copy(path.resolve(CACHE_PATH, 'favicon.ico'), path.join('public', 'favicon.ico'));
 
   activity.end();
 };
