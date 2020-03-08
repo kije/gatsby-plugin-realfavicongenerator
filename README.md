@@ -97,8 +97,66 @@ module.exports = {
 | backgroundColor 	| ❌        	| -             	| Background color for the images                                                                                             	|
 | ratio           	| ❌        	| -             	| Aspect ration of the generated images                                                                                       	|
 
-### How to use
+### Example usage
+```javascript
+// gastby-config.js
+module.exports = {
+    plugins: [
+        resolve: `gatsby-plugin-realfavicongenerator`,
+        options: {
+           apiKey: 'YOUR_API_KEY',
+           masterPicture: 'src/assets/favicon.png',
+           appName: 'My Awesome App',
+           startUrl: '/',
+           themeColor: '#000',
+           display: 'standalone',
+           defaultBackgroundColor: '#000',
+           defaultMargin: '10%',
+           compression: 3,
+           scalingAlgorithm: 'Lanczos',
+           ios: {
+             enabled: true,
+             onlyDefaultIcons: false,
+             legacyIcons: true,
+             precomposedIcons: true,
+           },
+           windows: {
+             enabled: true,
+             silhouette: true,
+           },
+           android: {
+             enabled: true,
+             legacyIcons: true,
+             lowResIcons: true,
+           },
+           safariPinnedTab: {
+             enabled: true,
+             threshold: 60,
+             silhouette: true,
+           },
+           openGraph: {
+             enabled: true,
+             ratio: 'square',
+           },
+           transformGeneratedManifest: (manifest) => {
+             manifest.scope = '/';
+             if (manifest.icons) {
+               manifest.icons = manifest.icons.map((icon) => {
+                 return {
+                   ...icon,
+                   purpose: 'maskable',
+                 };
+               });
+             }
+   
+             return manifest;
+           },
+        },
+    ],
+};
+```
 
-1. git clone --depth 1 -b master https://github.com/devrchancay/gatsby-plugin-starter.git
-2. Change the "name" in `package.json` with the conversion of gatsby plugins.
-3. Happy Hacking
+### About icon generation
+Since the generation of the icons via [realfavicongenerator.net](https://realfavicongenerator.net/) can take a long time, icons are only generated on the first run, and the only updated if:
+1. The plugin options change 
+2. The gatsby cache is cleared (e.g. via `gastby clean`)
