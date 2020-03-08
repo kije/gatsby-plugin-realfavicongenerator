@@ -4,8 +4,12 @@
     "module": "commonjs",
     "strict": true,
     "esModuleInterop": true,
-    "outDir": "./"
+    "outDir": "./",
+    "jsx": "preserve",
+    "rootDir": "src",
+    "lib": ["dom", "esnext"],
+    "declaration": true,
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "__tests__", "**/*.spec.ts"]
+  "include": ["src/**/*", "rfg-api.d.ts"],
+  "exclude": ["node_modules", "__tests__", "**/*.spec.ts"],
 }
