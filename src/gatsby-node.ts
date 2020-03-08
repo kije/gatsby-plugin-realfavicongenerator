@@ -10,12 +10,16 @@ import {
   OpenGraphFaviconDesign,
 } from 'rfg-api';
 import path from 'path';
+import { CACHE_PATH, PUBLIC_PATH, RESPONSE_CACHED_PATH } from './common';
 import {
-  CACHE_PATH,
-  PUBLIC_PATH,
-  RESPONSE_CACHED_PATH,
-} from './common';
-import { copy, remove, pathExists, readFileSync, writeFileSync, readFile, writeFile } from 'fs-extra';
+  copy,
+  remove,
+  pathExists,
+  readFileSync,
+  writeFileSync,
+  readFile,
+  writeFile,
+} from 'fs-extra';
 import { pickBy, merge } from 'lodash';
 import { AxiosError } from 'axios';
 
@@ -23,7 +27,7 @@ export interface RealFaviconPluginOptions extends PluginOptions {
   apiKey: string;
   masterPicture: string;
   appName: string;
-  startUrl: string;
+  startUrl?: string;
   themeColor: string;
   display?: 'standalone' | 'browser';
   forceOrientation?: 'portrait' | 'landscape';
@@ -43,7 +47,7 @@ export interface RealFaviconPluginOptions extends PluginOptions {
     margin?: string | number;
     backgroundColor?: string;
     startupImage?: {
-      masterPicture?: string;
+      masterPicture: string;
       margin?: string | number;
       backgroundColor?: string;
     };
@@ -83,18 +87,21 @@ export interface RealFaviconPluginOptions extends PluginOptions {
     ratio?: '1.91:1' | 'square';
   };
 
-  faviconRequestOverride?: GenerateFaviconRequest;
-  transformGeneratedManifest?: (manifest: {[key: string]: any}) => {[key: string]: any};
+  faviconRequestOverride?: Partial<GenerateFaviconRequest>;
+  transformGeneratedManifest?: (manifest: {
+    [key: string]: any;
+  }) => { [key: string]: any };
 }
 
 const defaultOptions: Partial<RealFaviconPluginOptions> = {
   display: 'standalone',
   compression: 3,
   scalingAlgorithm: 'Lanczos',
+  startUrl: '/',
   ios: {
     enabled: true,
-    onlyDefaultIcons: false,
-    legacyIcons: true,
+    onlyDefaultIcons: true,
+    legacyIcons: false,
     precomposedIcons: true,
   },
   windows: {
@@ -102,8 +109,8 @@ const defaultOptions: Partial<RealFaviconPluginOptions> = {
   },
   android: {
     enabled: true,
-    legacyIcons: true,
-    lowResIcons: true,
+    legacyIcons: false,
+    lowResIcons: false,
   },
   safariPinnedTab: {
     enabled: true,
@@ -235,7 +242,7 @@ function buildApiRequest({
       dropShadow,
       legacyIcons,
       lowResIcons,
-      existingManifest
+      existingManifest,
     } = android;
 
     faviconDesigns.android_chrome = filterConfig<AndroidChromeFaviconDesign>({
@@ -258,7 +265,9 @@ function buildApiRequest({
         display: display,
         orientation: forceOrientation,
         start_url: startUrl,
-        existing_manifest: existingManifest ? readFileSync(path.resolve(existingManifest)).toString() : null,
+        existing_manifest: existingManifest
+          ? readFileSync(path.resolve(existingManifest)).toString()
+          : null,
         on_conflict: existingManifest ? 'override' : null,
       }),
       assets: {
@@ -379,12 +388,15 @@ export const onPostBootstrap: NonNullable<GatsbyNode['onPostBootstrap']> = async
 
   const requestDigest = await cache.get(REQUEST_DIGEST_CACHE_KEY);
 
-  if (requestDigest !== currentRequestDigest || !await pathExists(path.join(CACHE_PATH, 'site.webmanifest'))) {
+  if (
+    requestDigest !== currentRequestDigest ||
+    !(await pathExists(path.join(CACHE_PATH, 'site.webmanifest')))
+  ) {
     reporter.info(
       '[gatsby-plugin-realfavicongenerator] Start favicon generation. This may take a while!',
     );
     try {
-      await remove(CACHE_PATH)
+      await remove(CACHE_PATH);
       const result = await generateIcons({
         ...apiRequest,
         versioning: {
@@ -405,17 +417,33 @@ export const onPostBootstrap: NonNullable<GatsbyNode['onPostBootstrap']> = async
   }
 
   await copy(CACHE_PATH, path.join('public', PUBLIC_PATH));
-  await copy(path.join(CACHE_PATH, 'favicon.ico'), path.join('public', 'favicon.ico'));
+  await copy(
+    path.join(CACHE_PATH, 'favicon.ico'),
+    path.join('public', 'favicon.ico'),
+  );
 
   const manifestCachePath = path.join(CACHE_PATH, 'site.webmanifest');
-  const manifestPublicPath = path.join('public', PUBLIC_PATH, 'site.webmanifest');
-  if (pluginOptions.transformGeneratedManifest && await pathExists(manifestCachePath)) {
-    const transformedManifest = pluginOptions.transformGeneratedManifest(JSON.parse((await readFile(manifestCachePath)).toString()));
+  const manifestPublicPath = path.join(
+    'public',
+    PUBLIC_PATH,
+    'site.webmanifest',
+  );
+  if (
+    pluginOptions.transformGeneratedManifest &&
+    (await pathExists(manifestCachePath))
+  ) {
+    const transformedManifest = pluginOptions.transformGeneratedManifest(
+      JSON.parse((await readFile(manifestCachePath)).toString()),
+    );
     if (transformedManifest) {
       await writeFile(manifestPublicPath, JSON.stringify(transformedManifest));
-      reporter.info('[gatsby-plugin-realfavicongenerator] manifest transformed!');
+      reporter.info(
+        '[gatsby-plugin-realfavicongenerator] manifest transformed!',
+      );
     } else {
-      reporter.warn('[gatsby-plugin-realfavicongenerator] Returned value of transformGeneratedManifest was empty.')
+      reporter.warn(
+        '[gatsby-plugin-realfavicongenerator] Returned value of transformGeneratedManifest was empty.',
+      );
     }
   }
 

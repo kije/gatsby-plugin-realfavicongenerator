@@ -1,12 +1,12 @@
-import React from 'react';
 import { GatsbySSR, RenderBodyArgs } from 'gatsby';
+import { ReactNode } from 'react';
 import { RESPONSE_PUBLIC_PATH } from './common';
 import { readFileSync, pathExistsSync } from 'fs-extra';
 import htmlParse from 'html-react-parser';
 import { GenerateFaviconResult } from 'rfg-api';
 import { RealFaviconPluginOptions } from './gatsby-node';
 
-export const onRenderBody: NonNullable<GatsbySSR['onRenderBody']> = (
+const onRenderBody: NonNullable<GatsbySSR['onRenderBody']> = (
   { setHeadComponents, reporter }: RenderBodyArgs,
   options: RealFaviconPluginOptions,
 ): any => {
@@ -29,5 +29,7 @@ export const onRenderBody: NonNullable<GatsbySSR['onRenderBody']> = (
 
   const components = htmlParse(favicon.html_code.replace('\n', '').trim());
 
-  setHeadComponents(components as React.ReactNode[]);
+  setHeadComponents(components as ReactNode[]);
 };
+
+export { onRenderBody };
