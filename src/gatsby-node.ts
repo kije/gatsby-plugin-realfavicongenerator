@@ -22,6 +22,7 @@ import {
 } from 'fs-extra';
 import { pickBy, merge } from 'lodash';
 import { AxiosError } from 'axios';
+import jsonStableStringify from 'fast-json-stable-stringify';
 
 export interface RealFaviconPluginOptions extends PluginOptions {
   apiKey: string;
@@ -384,7 +385,7 @@ export const onPostBootstrap: NonNullable<GatsbyNode['onPostBootstrap']> = async
   const options = merge(defaultOptions, pluginOptions);
 
   const apiRequest = buildApiRequest(options);
-  const currentRequestDigest = createContentDigest(JSON.stringify(apiRequest));
+  const currentRequestDigest = createContentDigest(jsonStableStringify(apiRequest));
 
   const requestDigest = await cache.get(REQUEST_DIGEST_CACHE_KEY);
 
@@ -436,7 +437,7 @@ export const onPostBootstrap: NonNullable<GatsbyNode['onPostBootstrap']> = async
       JSON.parse((await readFile(manifestCachePath)).toString()),
     );
     if (transformedManifest) {
-      await writeFile(manifestPublicPath, JSON.stringify(transformedManifest));
+      await writeFile(manifestPublicPath, jsonStableStringify(transformedManifest));
       reporter.info(
         '[gatsby-plugin-realfavicongenerator] manifest transformed!',
       );

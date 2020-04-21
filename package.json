@@ -1,6 +1,6 @@
 {
   "name": "gatsby-plugin-realfavicongenerator",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "main": "index.js",
   "author": "Kim Jeker <github@kije.ch>",
   "bugs": {
@@ -17,12 +17,14 @@
     "format": "prettier --write \"src/**/*.ts\""
   },
   "devDependencies": {
-    "@types/jest": "^25.1.3",
     "@babel/cli": "^7.8.4",
     "@babel/core": "^7.8.7",
     "@types/fs-extra": "^8.1.0",
+    "@types/jest": "^25.1.3",
     "@types/lodash": "^4.14.149",
     "@types/node": "^13.9.0",
+    "@types/react": "^16.9.34",
+    "@types/react-dom": "^16.9.6",
     "babel-core": "^7.0.0-bridge.0",
     "babel-jest": "^25.1.0",
     "babel-preset-gatsby-package": "^0.2.16",
@@ -31,8 +33,8 @@
     "jest": "^25.1.0",
     "prettier": "^1.19.1",
     "regenerator-runtime": "^0.13.3",
-    "typescript": "^3.8.3",
-    "ts-jest": "^25.2.1"
+    "ts-jest": "^25.2.1",
+    "typescript": "^3.8.3"
   },
   "peerDependencies": {
     "gatsby": ">2.0.0"
@@ -45,6 +47,7 @@
   ],
   "repository": "https://github.com/kije/gatsby-plugin-realfavicongenerator",
   "dependencies": {
+    "fast-json-stable-stringify": "^2.1.0",
     "fs-extra": "^8.1.0",
     "html-react-parser": "^0.10.1",
     "lodash": "^4.17.15",
