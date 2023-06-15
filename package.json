@@ -1,7 +1,7 @@
 {
   "name": "gatsby-plugin-realfavicongenerator",
   "version": "0.1.2",
-  "main": "index.js",
+  "main": "index.ts",
   "types": "index.d.ts",
   "author": "Kim Jeker <github@kije.ch>",
   "bugs": {
